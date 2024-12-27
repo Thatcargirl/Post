@@ -1,0 +1,55 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    color: #6d22c9;
+}
+
+.button-container {
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: #7330c4; /* Purple */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #b980ff; /* Lighter purple */
+}
+
+#result, #message {
+    margin-top: 20px;
+}
+
+.alien-item {
+     border: 1px solid #45008e; 
+     padding: 15px; 
+     margin-bottom: 15px; 
+     background-color: #f9f9f9; /* Light background for better contrast */
+     border-radius: 8px; /* Rounded corners */
+     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.alien-item h3 {
+    margin: 0;
+    color: #6d22c9; /* Heading color */
+}
+
+#currencyDisplay {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+#currencyAmount {
+    font-weight: bold;
+}
+
+button {
+    margin-top: 10px; /* Add some spacing between buttons */
+}

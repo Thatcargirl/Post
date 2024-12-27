@@ -1,0 +1,30 @@
+<script src="disable-alerts.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sell Aliens</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Currency Display -->
+    <div id="currencyDisplay">
+        Current Balance: <span id="currencyAmount"></span> Tokens
+    </div>
+
+    <h1>Sell Your Aliens</h1>
+    <div id="alienList"></div>
+
+    <div class="button-container">
+        <button onclick="sellSelectedAliens()">Sell Selected Aliens</button>
+        <button onclick="sellAllAliens()">Sell All Aliens</button>
+        <button onclick="window.location.href='index.html'">Back to Home</button>
+    </div>
+
+    <div id="message"></div>
+
+    <!-- Include currency.js and sell.js -->
+    <script src="currency.js"></script>
+    <script src="sell.js"></script>
+</body>
+</html>

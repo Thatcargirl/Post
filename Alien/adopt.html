@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adopt an Alien</title>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Currency Display -->
+    <div id="currencyDisplay">
+        Current Balance: <span id="currencyAmount">100</span> Tokens
+    </div>
+
+    <!-- Page Title -->
+    <h1>Adopt an Alien!</h1>
+
+    <!-- Alien Display Section -->
+    <div id="alienDisplay"></div>
+
+    <!-- Button Container -->
+    <div class="button-container">
+        <button onclick="displayAlien()">Generate New Alien</button> <!-- Single button for generating aliens -->
+        <button onclick="window.location.href='index.html'">Back to Home</button>
+    </div>
+
+    <!-- Adoption Message Display -->
+    <div id="adoptionMessage"></div>
+
+    <!-- JavaScript Files -->
+    <!-- Disable alerts script (if needed) -->
+    <script src="disable-alerts.js"></script>
+    <!-- Currency management script -->
+    <script src="currency.js"></script>
+    <!-- Main game logic script -->
+    <script src="adopt.js"></script>
+</body>
