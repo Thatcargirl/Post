@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Collector</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Arial', sans-serif;
+            background: #000;
+        }
+        canvas { 
+            display: block; 
+        }
+        #restartButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #restartButton:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<button id="restartButton">Restart</button>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const restartButton = document.getElementById('restartButton');
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let dot = { x: canvas.width / 2, y: canvas.height / 2, radius: 15, speed: 4 };
+let coins = [];
+let enemies = [];
+let score = 0;
+let gameOver = false;
+let glitter = [];
+let hahas = [];
+let stars = [];
+
+function generateStars(num) {
+    for (let i = 0; i < num; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.5 + 0.5,
+            alpha: Math.random()
+        });
+    }
+}
+
+function generateCoins(num) {
+    for (let i = 0; i < num; i++) {
+        coins.push({
+            x: Math.random() * (canvas.width - 40) + 20,
+            y: Math.random() * (canvas.height - 40) + 20,
+            radius: 10,
+            rotation: Math.random() * Math.PI * 2
+        });
+    }
+}
+
+function generateAsteroidShape(radius) {
+    let points = [];
+    let numPoints = Math.floor(Math.random() * 5) + 7;
+    for (let i = 0; i < numPoints; i++) {
+        let angle = (i / numPoints) * Math.PI * 2;
+        let r = radius * (0.8 + Math.random() * 0.4);
+        points.push({
+            x: Math.cos(angle) * r,
+            y: Math.sin(angle) * r
+        });
+    }
+    return points;
+}
+
+function generateEnemies(num) {
+    for (let i = 0; i < num; i++) {
+        enemies.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: 15,
+            dx: (Math.random() - 0.5) * 4,
+            dy: (Math.random() - 0.5) * 4,
+            color: '#8B4513',
+            shape: generateAsteroidShape(15),
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.1
+        });
+    }
+}
+
+function generateGlitter() {
+    for (let i = 0; i < 200; i++) {
+        glitter.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 5 + 1,
+            speedX: (Math.random() - 0.5) * 2,
+            speedY: (Math.random() - 0.5) * 2,
+            color: `hsl(${Math.random() * 360}, 100%, ${Math.random() * 100}%)`,
+            life: Math.random() * 100 + 50
+        });
+    }
+}
+
+function generateHahas() {
+    hahas = [{
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        size: 100,
+        angle: Math.PI / 180,
+        rotationSpeed: Math.PI / 180
+    }];
+}
+
+function explodeHaha() {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    for (let i = 0; i < 300; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speedX = Math.cos(angle) * (Math.random() * 3 + 1);
+        const speedY = Math.sin(angle) * (Math.random() * 3 + 1);
+        glitter.push({
+            x: centerX,
+            y: centerY,
+            size: Math.random() * 10 + 5,
+            speedX,
+            speedY,
+            color: `hsl(${Math.random() * 360},100%,50%)`,
+            life: Math.random() * 100 + 50
+        });
+    }
+    hahas = [];
+}
+
+function draw() {
+    ctx.fillStyle = 'rgba(10,10,30,1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'white';
+    stars.forEach(star => {
+        ctx.globalAlpha = star.alpha;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    const moonGradient = ctx.createRadialGradient(dot.x, dot.y, dot.radius / 4, dot.x, dot.y, dot.radius);
+    moonGradient.addColorStop(0, 'rgba(255,255,255,1)');
+    moonGradient.addColorStop(1, 'rgba(200,200,200,.8)');
+    
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+    ctx.fillStyle = moonGradient;
+    ctx.fill();
+    
+    coins.forEach(coin => {
+        ctx.save();
+        ctx.translate(coin.x, coin.y);
+        ctx.rotate(coin.rotation);
+        
+        const coinGradient = ctx.createRadialGradient(0, 0, coin.radius / 4, 0, 0, coin.radius);
+        coinGradient.addColorStop(0, 'gold');
+        coinGradient.addColorStop(1, 'orange');
+
+        ctx.beginPath();
+        ctx.arc(0, 0, coin.radius, -Math.PI/2, Math.PI*3/2);
+        ctx.fillStyle = coinGradient;
+        ctx.fill();
+        
+        ctx.restore();
+        
+        coin.rotation += 0.05;
+    });
+
+    enemies.forEach(enemy => {
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.rotate(enemy.rotation);
+
+        ctx.beginPath();
+        ctx.moveTo(enemy.shape[0].x, enemy.shape[0].y);
+        for(let i = 1; i < enemy.shape.length; i++) {
+            ctx.lineTo(enemy.shape[i].x, enemy.shape[i].y);
+        }
+        ctx.closePath();
+
+        ctx.fillStyle = enemy.color;
+        ctx.fill();
+
+        for(let i = 0; i < 10; i++) {
+            ctx.beginPath();
+            ctx.arc((Math.random() - 0.5) * enemy.radius * 1.5, (Math.random() - 0.5) * enemy.radius * 1.5, Math.random() * 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fill();
+        }
+
+        enemy.rotation += enemy.rotationSpeed;
+
+        ctx.restore();
+    });
+
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('Score: ' + score, 20, 40);
+
+    if(gameOver) {
+        drawGameOverMessage();
+        
+        glitter.forEach(particle => {
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.life--;
+            if(particle.life > 0) {
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life / 100;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        drawHahas();
+    }
+}
+
+function drawGameOverMessage() {
+    const messageText = 'Game Over!';
+    const fontSize = 60;
+
+    const gradient = ctx.createLinearGradient(canvas.width/2 - 150, canvas.height/2 - fontSize/2, canvas.width/2 + 150, canvas.height/2 - fontSize/2);
+    gradient.addColorStop(0, '#FF0000');
+    gradient.addColorStop(1, '#FF7F50');
+
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 3;
+    ctx.shadowBlur = 10;
+
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = gradient;
+    ctx.fillText(messageText, canvas.width/2, canvas.height/2);
+}
+
+function drawHahas() {
+    const hahaText = 'HAHAHA';
+    const fontSize = 100;
+
+    const gradient = ctx.createLinearGradient(canvas.width/2 - 150, canvas.height/2 - fontSize/2, canvas.width/2 + 150, canvas.height/2 - fontSize/2);
+    gradient.addColorStop(0, '#FF0000');
+    gradient.addColorStop(1, '#FF7F50');
+
+    ctx.shadowColor = 'rgba(255, 255, 255, 1)';
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 3;
+    ctx.shadowBlur = 10;
+
+    hahas.forEach(haha => {
+        haha.angle += haha.rotationSpeed;
+
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = gradient;
+        ctx.fillText(hahaText, haha.x, haha.y);
+    });
+}
+
+function update() {
+    if(gameOver) {
+        glitter.forEach(particle => {
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.life--;
+        });
+        glitter = glitter.filter(particle => particle.life > 0);
+
+        hahas.forEach(haha => haha.angle += haha.rotationSpeed);
+
+        return;
+    }
+
+    if(keys.ArrowLeft) dot.x -= dot.speed;
+    if(keys.ArrowRight) dot.x += dot.speed;
+    if(keys.ArrowUp) dot.y -= dot.speed;
+    if(keys.ArrowDown) dot.y += dot.speed;
+
+    if(dot.x < 0) dot.x = canvas.width;
+    if(dot.x > canvas.width) dot.x = 0;
+    if(dot.y < 0) dot.y = canvas.height;
+    if(dot.y > canvas.height) dot.y = 0;
+
+    enemies.forEach(enemy => {
+        enemy.x += enemy.dx;
+        enemy.y += enemy.dy;
+
+        if(enemy.x < 0 || enemy.x > canvas.width) enemy.dx *= -1;
+        if(enemy.y < 0 || enemy.y > canvas.height) enemy.dy *= -1;
+
+        const playerDx = dot.x - enemy.x;
+        const playerDy = dot.y - enemy.y;
+        const playerDistance = Math.sqrt(playerDx * playerDx + playerDy * playerDy);
+
+        if(playerDistance < dot.radius + enemy.radius) {
+            gameOver = true;
+            generateGlitter();
+            restartButton.style.display = 'block';
+        }
+    });
+
+    coins = coins.filter(coin => {
+        const dx = coin.x - dot.x;
+        const dy = coin.y - dot.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if(distance < dot.radius + coin.radius) {
+            score++;
+            return false;
+        }
+
+        return true;
+    });
+
+    if(coins.length === 0) {
+        generateCoins(5);
+        generateEnemies(1);
+    }
+
+    stars.forEach(star => {
+        star.alpha += (Math.random() - 0.5) * 0.05;
+        star.alpha = Math.max(0, Math.min(1, star.alpha));
+    });
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+let keys = {};
+
+document.addEventListener('keydown', e => keys[e.code] = true);
+document.addEventListener('keyup', e => keys[e.code] = false);
+
+function restartGame() {
+    dot = { x: canvas.width / 2, y: canvas.height / 2, radius: 15, speed: 4 };
+    coins = [];
+    enemies = [];
+    score = 0;
+    gameOver = false;
+    glitter = [];
+    hahas = [];
+    generateCoins(5);
+    generateEnemies(3);
+    restartButton.style.display = 'none';
+}
+
+restartButton.addEventListener('click', restartGame);
+
+canvas.addEventListener('click', (e) => {
+    if(gameOver) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        if(hahas.length > 0) {
+            const haha = hahas[0];
+            const textWidth = 300;
+            const textHeight = 100;
+
+            if(clickX > haha.x - textWidth / 2 && clickX < haha.x + textWidth / 2 &&
+               clickY > haha.y - textHeight / 2 && clickY < haha.y + textHeight / 2) {
+                explodeHaha();
+            }
+        } else if(clickX > canvas.width / 2 - 150 && clickX < canvas.width / 2 + 150 &&
+                  clickY > canvas.height / 2 - 40 && clickY < canvas.height / 2 + 20) {
+            generateHahas();
+        } else if(clickX > canvas.width / 2 - 150 && clickX < canvas.width / 2 + 150 &&
+                  clickY > canvas.height / 2 - 40 && clickY < canvas.height / 2 + 20) {
+            generateHahas();
+        }
+    }
+});
+
+generateStars(200);
+generateCoins(5);
+generateEnemies(3);
+gameLoop();
+</script>
+</body>
+</html>
