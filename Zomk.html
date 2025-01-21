@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Escape: Zombie Apocalypse</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Creepster', cursive;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+            background: linear-gradient(to bottom, #1a1a1a, #0a0a0a);
+        }
+        #menu {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #FFFFFF;
+            font-family: 'Creepster', cursive;
+        }
+        #menu button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 24px;
+            font-family: 'Creepster', cursive;
+            background-color: #FF0000;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #restartButton {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    font-size: 24px;
+    font-family: 'Creepster', cursive;
+    background-color: #FF0000;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+        @font-face {
+            font-family: 'Creepster';
+            src: url('https://fonts.gstatic.com/s/creepster/v13/AlZy_zVUqJz4yMrniH4Rcn35.woff2') format('woff2');
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="menu">
+    <h1>Brain Escape: Zombie Apocalypse</h1>
+    <button onclick="startGame('easy')">Easy</button>
+    <button onclick="startGame('mid')">Mid</button>
+    <button onclick="startGame('hard')">Hard</button>
+</div>
+<button id="restartButton">Restart</button>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const menu = document.getElementById("menu");
+    const restartButton = document.getElementById("restartButton");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const player = {
+        x: canvas.width / 2,
+        y: canvas.height - 50,
+        width: 40,
+        height: 40,
+        speed: 5
+    };
+
+    const zombies = [];
+    let zombieSpeed;
+    let zombieSpawnRate;
+
+    let score = 0;
+    let gameOver = false;
+
+    const keys = { left: false, right: false };
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') keys.left = true;
+        if (e.key === 'ArrowRight') keys.right = true;
+    });
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft') keys.left = false;
+        if (e.key === 'ArrowRight') keys.right = false;
+    });
+
+    restartButton.addEventListener('click', () => {
+        restartGame();
+    });
+
+    function startGame(difficulty) {
+        switch (difficulty) {
+            case 'easy':
+                zombieSpeed = 1;
+                zombieSpawnRate = 0.015;
+                break;
+            case 'mid':
+                zombieSpeed = 1.5;
+                zombieSpawnRate = 0.02;
+                break;
+            case 'hard':
+                zombieSpeed = 2;
+                zombieSpawnRate = 0.03;
+                break;
+        }
+        menu.style.display = 'none';
+        restartButton.style.display = 'none';
+        gameLoop();
+    }
+
+    function createZombie() {
+        const zombie = {
+            x: Math.random() * (canvas.width - 50),
+            y: -50,
+            width: 40,
+            height: 60,
+            color: "#228B22", // Green color for zombies
+            decayStage: 0
+        };
+
+        const noOverlap = zombies.every(existingZombie => 
+            Math.abs(existingZombie.x - zombie.x) > zombie.width);
+
+        if (noOverlap) {
+            zombies.push(zombie);
+        }
+    }
+
+    function update() {
+    if (gameOver) return;
+
+    // Player movement
+    if (keys.left && player.x > 0) player.x -= player.speed;
+    if (keys.right && player.x < canvas.width - player.width) player.x += player.speed;
+
+    // Update zombies
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const zombie = zombies[i];
+        zombie.y += zombieSpeed;
+
+        // Check for collision with player
+        if (
+            zombie.y + zombie.height > player.y &&
+            zombie.x < player.x + player.width &&
+            zombie.x + zombie.width > player.x
+        ) {
+            gameOver = true;
+            restartButton.style.display = "block";
+        }
+
+        // Remove zombie if it moves off-screen
+        if (zombie.y > canvas.height) {
+            zombies.splice(i, 1);
+            score++;
+
+            // Adjust difficulty based on score
+            if (score % 10 === 0) {
+                zombieSpeed = Math.min(zombieSpeed * 1.1, 3); // Increase speed by 10%, max 3
+                zombieSpawnRate = Math.min(zombieSpawnRate * 1.1, 0.05); // Increase spawn rate by 10%, max 0.05
+            }
+        }
+    }
+
+    // Spawn zombies
+    if (Math.random() < zombieSpawnRate && zombies.length < 100) {
+        createZombie();
+    }
+
+    // Debugging info
+    console.log(`Score: ${score}, Zombies: ${zombies.length}, Speed: ${zombieSpeed.toFixed(2)}, Spawn Rate: ${zombieSpawnRate.toFixed(4)}`);
+}
+
+    function difficultyMultiplier(difficulty) {
+        switch (difficulty) {
+            case 'easy':
+                return 0.1;
+            case 'mid':
+                return 0.2;
+            case 'hard':
+                return 0.3;
+            default:
+                return 0.1;
+        }
+    }
+
+    function drawBrainPlayer(x, y) {
+        ctx.beginPath();
+        ctx.fillStyle = "#FF6347"; // Tomato red
+        ctx.ellipse(x + 20, y + 20, 20, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Brain folds
+        ctx.strokeStyle = "#FF4500";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x + 5, y + 15);
+        ctx.quadraticCurveTo(x + 20, y + 5, x + 35, y + 15);
+        ctx.moveTo(x + 5, y + 25);
+        ctx.quadraticCurveTo(x + 20, y + 15, x + 35, y + 25);
+        ctx.stroke();
+    }
+
+    function drawZombie(zombie) {
+        ctx.save();
+        ctx.translate(zombie.x, zombie.y);
+
+        // Zombie body
+        ctx.fillStyle = `rgba(34, 139, 34, ${1 - zombie.decayStage * 0.2})`;
+        ctx.beginPath();
+        ctx.moveTo(zombie.width / 2, 0);
+        ctx.lineTo(0, zombie.height);
+        ctx.lineTo(zombie.width, zombie.height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Zombie head
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(34, 139, 34, ${1 - zombie.decayStage * 0.2})`;
+        ctx.ellipse(zombie.width / 2, -10, 15, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bloody wounds
+        ctx.fillStyle = `rgba(139, 0, 0, ${0.5 - zombie.decayStage * 0.1})`;
+        ctx.beginPath();
+        ctx.arc(10, zombie.height / 2, 5, 0, Math.PI * 2);
+        ctx.arc(zombie.width - 10, zombie.height / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Decaying effect
+        zombie.decayStage = Math.min(zombie.decayStage + 0.001, 5);
+
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw brain player
+        drawBrainPlayer(player.x, player.y);
+
+        // Draw zombies
+        zombies.forEach(drawZombie);
+
+        // Score and game over text
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "30px Creepster";
+        ctx.fillText("Brains Saved: " + score, 10, 30);
+
+        if (gameOver) {
+        ctx.fillStyle = "#FF0000";
+        ctx.font = "60px Creepster";
+        ctx.fillText("BRAIN CONSUMED!", canvas.width / 2 - 200, canvas.height / 2);
+        ctx.font = "30px Creepster";
+        ctx.fillText("You saved " + score + " brains", canvas.width / 2 - 100, canvas.height / 2 + 50);
+        restartButton.style.display = "block"; // Show the restart button
+    }
+}
+
+    function restartGame() {
+    player.x = canvas.width / 2;
+    player.y = canvas.height - 50;
+    zombies.length = 0;
+    score = 0;
+    gameOver = false;
+    menu.style.display = 'flex';
+    restartButton.style.display = 'none'; // Hide the restart button
+}
+
+
+    function gameLoop() {
+        update();
+        draw();
+        if (!gameOver) {
+            requestAnimationFrame(gameLoop);
+        }
+    }
+</script>
+</body>
+</html>
